@@ -7,6 +7,7 @@
 
 class SRuntimeChart;
 struct FChartsModel;
+struct FChartsRenderStyle;
 
 UCLASS(Abstract, BlueprintType)
 class RUNTIMECHARTS_API UChartWidget : public UWidget
@@ -15,9 +16,6 @@ class RUNTIMECHARTS_API UChartWidget : public UWidget
 
 public:
     UChartWidget(const FObjectInitializer& ObjectInitializer);
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, BlueprintSetter = SetChartStyle, Category = "Charts")
-    FChartsStyle ChartStyle;
 
     UPROPERTY(BlueprintAssignable, Category = "Charts|Events")
     FChartsElementEvent OnElementHovered;
@@ -33,9 +31,6 @@ public:
 
     UPROPERTY(BlueprintAssignable, Category = "Charts|Events")
     FChartsHoverEndedEvent OnElementHoverEnded;
-
-    UFUNCTION(BlueprintCallable, BlueprintSetter, Category = "Charts")
-    void SetChartStyle(const FChartsStyle& InStyle);
 
     UFUNCTION(BlueprintCallable, Category = "Charts")
     void RefreshChart();
@@ -57,6 +52,7 @@ public:
 protected:
     virtual TSharedRef<SWidget> RebuildWidget() override;
     virtual void BuildModel(FChartsModel& OutModel) const;
+    virtual void BuildStyle(FChartsRenderStyle& OutStyle) const;
     TSharedPtr<SRuntimeChart> MyChart;
 
 private:

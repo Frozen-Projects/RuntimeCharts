@@ -5,10 +5,12 @@
 #include "ChartsTypes.generated.h"
 
 UENUM(BlueprintType)
-enum class EChartsSeriesType : uint8
+enum class EChartsElementPart : uint8
 {
+    Data,
     Bar,
-    Line
+    Line,
+    Area
 };
 
 USTRUCT(BlueprintType)
@@ -20,7 +22,10 @@ struct RUNTIMECHARTS_API FChartsValue
     double Value = 0.0;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Charts")
-    FSlateColor Color = FSlateColor(FLinearColor(0.12f, 0.55f, 1.0f));
+    FSlateColor PrimaryColor = FSlateColor(FLinearColor(0.12f, 0.55f, 1.0f));
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Charts")
+    FSlateColor SecondaryColor = FSlateColor(FLinearColor(1.0f, 0.7f, 0.12f));
 };
 
 USTRUCT(BlueprintType)
@@ -91,13 +96,15 @@ struct RUNTIMECHARTS_API FChartsAreaConfig : public FChartsLineConfig
 };
 
 USTRUCT(BlueprintType)
-struct RUNTIMECHARTS_API FChartsComboConfig : public FChartsLineConfig
+struct RUNTIMECHARTS_API FChartsComboConfig : public FChartsBarConfig
 {
     GENERATED_BODY()
 
-    /** Missing entries default to Bar for index 0, Line for other indices. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Charts")
-    TArray<EChartsSeriesType> SeriesTypes;
+    bool bShowDataPoints = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Charts")
+    bool bIsSmooth = false;
 };
 
 USTRUCT(BlueprintType)
@@ -182,14 +189,61 @@ struct RUNTIMECHARTS_API FChartsStyle
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Charts")
     FLinearColor TextColor = FLinearColor(0.8f, 0.86f, 0.94f);
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Charts")
-    FLinearColor GridColor = FLinearColor(0.19f, 0.24f, 0.32f, 0.6f);
-
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Charts", meta = (ClampMin = "8", ClampMax = "48"))
     int32 FontSize = 11;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Charts")
+    bool bShowLegend = true;
+
+    /** Space between the plot/axis labels and the series legend, in Slate units. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Charts", meta = (ClampMin = "0", ClampMax = "200"))
+    float LegendPadding = 12.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Charts")
+    bool bShowTooltips = true;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Charts")
+    bool bHighlightHovered = true;
+};
+
+USTRUCT(BlueprintType)
+struct RUNTIMECHARTS_API FChartsGridStyle : public FChartsStyle
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Charts")
+    FLinearColor GridColor = FLinearColor(0.19f, 0.24f, 0.32f, 0.6f);
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Charts", meta = (ClampMin = "2", ClampMax = "12"))
     int32 GridDivisions = 4;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Charts")
+    bool bShowGrid = true;
+};
+
+USTRUCT(BlueprintType)
+struct RUNTIMECHARTS_API FChartsAxisStyle : public FChartsGridStyle
+{
+    GENERATED_BODY()
+
+    /** Space from the plot to axis/category names and tick labels, in Slate units. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Charts", meta = (ClampMin = "0", ClampMax = "200"))
+    float AxisLabelPadding = 8.0f;
+};
+
+USTRUCT(BlueprintType)
+struct RUNTIMECHARTS_API FChartsBarStyle : public FChartsAxisStyle
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Charts", meta = (ClampMin = "0", ClampMax = "0.8"))
+    float BarGapRatio = 0.25f;
+};
+
+USTRUCT(BlueprintType)
+struct RUNTIMECHARTS_API FChartsLineStyle : public FChartsAxisStyle
+{
+    GENERATED_BODY()
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Charts", meta = (ClampMin = "0.5", ClampMax = "20"))
     float LineThickness = 2.0f;
@@ -199,21 +253,39 @@ struct RUNTIMECHARTS_API FChartsStyle
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Charts", meta = (ClampMin = "2", ClampMax = "30"))
     float HitTolerance = 7.0f;
+};
+
+USTRUCT(BlueprintType)
+struct RUNTIMECHARTS_API FChartsAreaStyle : public FChartsLineStyle
+{
+    GENERATED_BODY()
+};
+
+USTRUCT(BlueprintType)
+struct RUNTIMECHARTS_API FChartsComboStyle : public FChartsLineStyle
+{
+    GENERATED_BODY()
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Charts", meta = (ClampMin = "0", ClampMax = "0.8"))
     float BarGapRatio = 0.25f;
+};
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Charts")
-    bool bShowGrid = true;
+USTRUCT(BlueprintType)
+struct RUNTIMECHARTS_API FChartsPieStyle : public FChartsStyle
+{
+    GENERATED_BODY()
+};
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Charts")
-    bool bShowLegend = true;
+USTRUCT(BlueprintType)
+struct RUNTIMECHARTS_API FChartsPolarAreaStyle : public FChartsGridStyle
+{
+    GENERATED_BODY()
+};
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Charts")
-    bool bShowTooltips = true;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Charts")
-    bool bHighlightHovered = true;
+USTRUCT(BlueprintType)
+struct RUNTIMECHARTS_API FChartsRadarStyle : public FChartsLineStyle
+{
+    GENERATED_BODY()
 };
 
 USTRUCT(BlueprintType)
@@ -231,10 +303,28 @@ struct RUNTIMECHARTS_API FChartsElement
     FSlateColor Color;
 
     UPROPERTY(BlueprintReadOnly, Category = "Charts")
+    FSlateColor PrimaryColor;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Charts")
+    FSlateColor SecondaryColor;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Charts")
+    EChartsElementPart Part = EChartsElementPart::Data;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Charts")
     int32 DataIndex = INDEX_NONE;
 
     UPROPERTY(BlueprintReadOnly, Category = "Charts")
     int32 ValueIndex = INDEX_NONE;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Charts")
+    FString SeriesName;
+
+    bool IsSameTarget(const FChartsElement& Other) const
+    {
+        return DataIndex != INDEX_NONE && Other.DataIndex != INDEX_NONE && ValueIndex == Other.ValueIndex && Part == Other.Part
+            && (Part == EChartsElementPart::Area || DataIndex == Other.DataIndex);
+    }
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FChartsElementEvent, const FString&, DataName, double, Value, FSlateColor, Color);

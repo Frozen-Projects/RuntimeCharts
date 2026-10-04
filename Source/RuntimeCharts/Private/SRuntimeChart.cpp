@@ -15,7 +15,7 @@ void SRuntimeChart::Construct(const FArguments& Args)
     SetClipping(EWidgetClipping::ClipToBounds);
 }
 
-void SRuntimeChart::SetModel(FChartsModel InModel, const FChartsStyle& InStyle)
+void SRuntimeChart::SetModel(FChartsModel InModel, const FChartsRenderStyle& InStyle)
 {
     Model = MoveTemp(InModel);
     Style = ChartsMath::SanitizeStyle(InStyle);
@@ -75,7 +75,8 @@ int32 SRuntimeChart::OnPaint(const FPaintArgs& Args, const FGeometry& Geometry, 
     {
         FLinearColor Color = Primitive.Color.GetColor(WidgetStyle) * WidgetStyle.GetColorAndOpacityTint();
         Color.A *= Primitive.Opacity;
-        if (bEnabled && Style.bHighlightHovered && Hovered.DataIndex != INDEX_NONE && Primitive.DataIndex == Hovered.DataIndex && Primitive.ValueIndex == Hovered.ValueIndex)
+        if (bEnabled && Style.bHighlightHovered && Hovered.DataIndex != INDEX_NONE && Primitive.ValueIndex == Hovered.ValueIndex
+            && Primitive.Part == Hovered.Part && (Hovered.Part == EChartsElementPart::Area || Primitive.DataIndex == Hovered.DataIndex))
         {
             const float Alpha = Color.A;
             Color = FMath::Lerp(Color, FLinearColor::White, 0.2f);
@@ -127,11 +128,17 @@ FReply SRuntimeChart::OnMouseMove(const FGeometry& Geometry, const FPointerEvent
         ClearHover();
         return FReply::Unhandled();
     }
-    if (Hovered.DataIndex != Element.DataIndex || Hovered.ValueIndex != Element.ValueIndex)
+    const bool bChangedTarget = !Hovered.IsSameTarget(Element);
+    const bool bChangedSample = bChangedTarget || Hovered.DataIndex != Element.DataIndex;
+    Hovered = Element;
+    if (Style.bShowTooltips && bChangedSample)
     {
-        Hovered = Element;
+        const FString Prefix = Element.Part == EChartsElementPart::Area ? Element.SeriesName + TEXT(" | ") : FString();
+        SetToolTipText(FText::FromString(Prefix + Element.DataName + TEXT(": ") + ChartsMath::Number(Element.Value)));
+    }
+    if (bChangedTarget)
+    {
         Invalidate(EInvalidateWidgetReason::Paint);
-        if (Style.bShowTooltips) SetToolTipText(FText::FromString(Element.DataName + TEXT(": ") + ChartsMath::Number(Element.Value)));
         OnHovered.ExecuteIfBound(Element);
     }
     return FReply::Handled();
@@ -159,7 +166,8 @@ FReply SRuntimeChart::Release(const FGeometry& Geometry, const FPointerEvent& Ev
     if (Previous.DataIndex == INDEX_NONE) return HasMouseCapture() ? FReply::Handled().ReleaseMouseCapture() : FReply::Unhandled();
     EnsureScene(FVector2f(Geometry.GetLocalSize()));
     FChartsElement Element;
-    if (IsEnabled() && Scene.HitTest(FVector2f(Geometry.AbsoluteToLocal(Event.GetScreenSpacePosition())), Element) && Element.DataIndex == Previous.DataIndex && Element.ValueIndex == Previous.ValueIndex)
+    if (IsEnabled() && Scene.HitTest(FVector2f(Geometry.AbsoluteToLocal(Event.GetScreenSpacePosition())), Element)
+        && Element.IsSameTarget(Previous))
         OnClicked.ExecuteIfBound(Element);
     return FReply::Handled().ReleaseMouseCapture();
 }

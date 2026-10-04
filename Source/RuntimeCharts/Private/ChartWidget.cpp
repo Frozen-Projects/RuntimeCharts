@@ -6,21 +6,18 @@ UChartWidget::UChartWidget(const FObjectInitializer& ObjectInitializer) : Super(
     SetVisibility(ESlateVisibility::Visible);
 }
 
-void UChartWidget::SetChartStyle(const FChartsStyle& InStyle)
-{
-    ChartStyle = InStyle;
-    RefreshChart();
-}
-
 void UChartWidget::RefreshChart()
 {
     if (!MyChart.IsValid()) return;
     FChartsModel Model;
+    FChartsRenderStyle Style;
     BuildModel(Model);
-    MyChart->SetModel(MoveTemp(Model), ChartStyle);
+    BuildStyle(Style);
+    MyChart->SetModel(MoveTemp(Model), Style);
 }
 
 void UChartWidget::BuildModel(FChartsModel& OutModel) const { OutModel = FChartsModel(); }
+void UChartWidget::BuildStyle(FChartsRenderStyle& OutStyle) const { OutStyle = FChartsRenderStyle(); }
 
 TSharedRef<SWidget> UChartWidget::RebuildWidget()
 {

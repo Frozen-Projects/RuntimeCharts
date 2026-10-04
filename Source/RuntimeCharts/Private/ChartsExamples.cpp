@@ -23,8 +23,8 @@ namespace
             FChartsData Row;
             Row.DataName = Names[I];
             FChartsValue A, B;
-            A.Value = Values[I][0]; A.Color = FSlateColor(Blue);
-            B.Value = Values[I][1]; B.Color = FSlateColor(Teal);
+            A.Value = Values[I][0]; A.PrimaryColor = FSlateColor(Blue);
+            B.Value = Values[I][1]; B.PrimaryColor = FSlateColor(Teal);
             Row.Values = {A, B};
             Data.Add(MoveTemp(Row));
         }
@@ -42,7 +42,7 @@ namespace
             FChartsData Row;
             Row.DataName = Names[I];
             FChartsValue Value;
-            Value.Value = Values[I]; Value.Color = FSlateColor(Colors[I]);
+            Value.Value = Values[I]; Value.PrimaryColor = FSlateColor(Colors[I]);
             Row.Values.Add(Value);
             Data.Add(MoveTemp(Row));
         }
@@ -83,12 +83,18 @@ FChartsAreaConfig UChartsExampleLibrary::MakeExampleAreaConfig()
 FChartsComboConfig UChartsExampleLibrary::MakeExampleComboConfig()
 {
     FChartsComboConfig Config;
-    static_cast<FChartsLineConfig&>(Config) = MakeExampleLineConfig();
-    Config.ChartName = TEXT("Combo · independent value axes");
+    static_cast<FChartsBarConfig&>(Config) = MakeExampleBarConfig();
+    Config.ChartName = TEXT("Combo · grouped bars with matching lines");
+    Config.bShowDataPoints = true;
+    Config.bIsSmooth = true;
     Config.SeriesNames = {TEXT("Units"), TEXT("Rate %")};
     Config.Axis = {{0, 100}, {0, 1}};
-    Config.SeriesTypes = {EChartsSeriesType::Bar, EChartsSeriesType::Line};
-    for (FChartsData& Row : Config.Data) Row.Values[1].Value /= 100.0;
+    for (FChartsData& Row : Config.Data)
+    {
+        Row.Values[0].SecondaryColor = FSlateColor(Amber);
+        Row.Values[1].SecondaryColor = FSlateColor(FLinearColor(0.98f, 0.25f, 0.5f));
+        Row.Values[1].Value /= 100.0;
+    }
     return Config;
 }
 
@@ -123,7 +129,7 @@ FChartsRadarConfig UChartsExampleLibrary::MakeExampleRadarConfig()
         for (double Number : Values[I])
         {
             FChartsValue Value;
-            Value.Value = Number; Value.Color = FSlateColor(I == 0 ? Blue : Teal);
+            Value.Value = Number; Value.PrimaryColor = FSlateColor(I == 0 ? Blue : Teal);
             Row.Values.Add(Value);
         }
         Config.Data.Add(MoveTemp(Row));
@@ -185,3 +191,4 @@ void UChartsDemoWidget::ShowClick(const FString& DataName, double Value, FSlateC
 {
     if (StatusText) StatusText->SetText(FText::FromString(FString::Printf(TEXT("Click: %s | %.3f"), *DataName, Value)));
 }
+

@@ -35,9 +35,10 @@ FChartsModel FChartsModel::From(const FChartsAreaConfig& Config)
 
 FChartsModel FChartsModel::From(const FChartsComboConfig& Config)
 {
-    FChartsModel Model = From(static_cast<const FChartsLineConfig&>(Config));
+    FChartsModel Model = From(static_cast<const FChartsBarConfig&>(Config));
     Model.Kind = EChartsKind::Combo;
-    Model.SeriesTypes = Config.SeriesTypes;
+    Model.bPoints = Config.bShowDataPoints;
+    Model.bSmooth = Config.bIsSmooth;
     return Model;
 }
 
@@ -84,10 +85,9 @@ int32 FChartsModel::NumSeries() const
     return Count;
 }
 
-bool FChartsModel::IsBarSeries(int32 Series) const
+bool FChartsModel::HasBars() const
 {
-    if (Kind == EChartsKind::Bar) return true;
-    return Kind == EChartsKind::Combo && (SeriesTypes.IsValidIndex(Series) ? SeriesTypes[Series] == EChartsSeriesType::Bar : Series == 0);
+    return Kind == EChartsKind::Bar || Kind == EChartsKind::Combo;
 }
 
 const FChartsValue* FChartsModel::GetValue(int32 DataIndex, int32 ValueIndex) const
@@ -97,16 +97,21 @@ const FChartsValue* FChartsModel::GetValue(int32 DataIndex, int32 ValueIndex) co
     return FMath::IsFinite(Value.Value) ? &Value : nullptr;
 }
 
-FChartsElement FChartsModel::Element(int32 DataIndex, int32 ValueIndex) const
+FChartsElement FChartsModel::Element(int32 DataIndex, int32 ValueIndex, EChartsElementPart Part) const
 {
     FChartsElement Result;
     if (const FChartsValue* Value = GetValue(DataIndex, ValueIndex))
     {
         Result.DataName = Data[DataIndex].DataName;
         Result.Value = Value->Value;
-        Result.Color = Value->Color;
+        Result.PrimaryColor = Value->PrimaryColor;
+        Result.SecondaryColor = Value->SecondaryColor;
+        Result.Color = Kind == EChartsKind::Combo && Part == EChartsElementPart::Line ? Value->SecondaryColor : Value->PrimaryColor;
+        Result.Part = Part;
         Result.DataIndex = DataIndex;
         Result.ValueIndex = ValueIndex;
+        Result.SeriesName = Kind == EChartsKind::Radar || Kind == EChartsKind::Pie || Kind == EChartsKind::PolarArea
+            ? Data[DataIndex].DataName : (Names.IsValidIndex(ValueIndex) ? Names[ValueIndex] : FString::Printf(TEXT("Series %d"), ValueIndex + 1));
     }
     return Result;
 }
@@ -128,11 +133,17 @@ FChartsRange ChartsMath::Range(const FChartsModel& Model, int32 Series)
 {
     FChartsRange Result{0.0, 0.0};
     const bool bShared = Model.Axis.Num() <= 1;
+    const auto AxisFor = [&Model, bShared](int32 Index)
+    {
+        if (bShared || (Model.Kind != EChartsKind::Radar && !Model.Axis.IsValidIndex(Index))) return 0;
+        return Index;
+    };
+    const int32 AxisIndex = AxisFor(Series);
     for (int32 Row = 0; Row < Model.Data.Num(); ++Row)
     {
         for (int32 Index = 0; Index < Model.Data[Row].Values.Num(); ++Index)
         {
-            if (!bShared && Index != Series) continue;
+            if (AxisFor(Index) != AxisIndex) continue;
             if (const FChartsValue* Value = Model.GetValue(Row, Index))
             {
                 Result.Min = FMath::Min(Result.Min, Value->Value);
@@ -140,7 +151,6 @@ FChartsRange ChartsMath::Range(const FChartsModel& Model, int32 Series)
             }
         }
     }
-    const int32 AxisIndex = bShared ? 0 : Series;
     if (Model.Axis.IsValidIndex(AxisIndex))
     {
         const FVector2D& Limits = Model.Axis[AxisIndex];
@@ -222,9 +232,9 @@ FString ChartsMath::Number(double Value)
     return FText::AsNumber(Value, &Options).ToString();
 }
 
-FChartsStyle ChartsMath::SanitizeStyle(const FChartsStyle& Input)
+FChartsRenderStyle ChartsMath::SanitizeStyle(const FChartsRenderStyle& Input)
 {
-    FChartsStyle Style = Input;
+    FChartsRenderStyle Style = Input;
     auto Safe = [](float Value, float Fallback, float Min, float Max) { return FMath::IsFinite(Value) ? FMath::Clamp(Value, Min, Max) : Fallback; };
     Style.DesiredSize.X = Safe(static_cast<float>(Style.DesiredSize.X), 560.0f, 64.0f, 16384.0f);
     Style.DesiredSize.Y = Safe(static_cast<float>(Style.DesiredSize.Y), 340.0f, 64.0f, 16384.0f);
@@ -234,5 +244,7 @@ FChartsStyle ChartsMath::SanitizeStyle(const FChartsStyle& Input)
     Style.PointRadius = Safe(Style.PointRadius, 3.5f, 1.0f, 20.0f);
     Style.HitTolerance = Safe(Style.HitTolerance, 7.0f, 2.0f, 30.0f);
     Style.BarGapRatio = Safe(Style.BarGapRatio, 0.25f, 0.0f, 0.8f);
+    Style.AxisLabelPadding = Safe(Style.AxisLabelPadding, 8.0f, 0.0f, 200.0f);
+    Style.LegendPadding = Safe(Style.LegendPadding, 12.0f, 0.0f, 200.0f);
     return Style;
 }

@@ -15,7 +15,7 @@ public:
     SLATE_END_ARGS()
 
     void Construct(const FArguments& Args);
-    void SetModel(FChartsModel InModel, const FChartsStyle& InStyle);
+    void SetModel(FChartsModel InModel, const FChartsRenderStyle& InStyle);
     bool HitTest(FVector2f Position, FChartsElement& OutElement) const;
     bool GetHovered(FChartsElement& OutElement) const;
 
@@ -37,7 +37,7 @@ private:
     FReply Press(const FGeometry& Geometry, const FPointerEvent& Event);
     FReply Release(const FGeometry& Geometry, const FPointerEvent& Event);
     FChartsModel Model;
-    FChartsStyle Style;
+    FChartsRenderStyle Style;
     mutable FChartsScene Scene;
     mutable bool bSceneDirty = true;
     FChartsElement Hovered;

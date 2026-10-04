@@ -5,6 +5,26 @@
 
 enum class EChartsKind : uint8 { Bar, Line, Area, Combo, Pie, PolarArea, Radar };
 
+struct FChartsRenderStyle : public FChartsStyle
+{
+    FChartsRenderStyle() = default;
+    FChartsRenderStyle(const FChartsStyle& InStyle);
+    FChartsRenderStyle(const FChartsGridStyle& InStyle);
+    FChartsRenderStyle(const FChartsAxisStyle& InStyle);
+    FChartsRenderStyle(const FChartsBarStyle& InStyle);
+    FChartsRenderStyle(const FChartsLineStyle& InStyle);
+    FChartsRenderStyle(const FChartsComboStyle& InStyle);
+
+    FLinearColor GridColor = FLinearColor(0.19f, 0.24f, 0.32f, 0.6f);
+    int32 GridDivisions = 4;
+    float LineThickness = 2.0f;
+    float PointRadius = 3.5f;
+    float HitTolerance = 7.0f;
+    float BarGapRatio = 0.25f;
+    float AxisLabelPadding = 8.0f;
+    bool bShowGrid = true;
+};
+
 struct FChartsModel
 {
     EChartsKind Kind = EChartsKind::Bar;
@@ -12,7 +32,6 @@ struct FChartsModel
     TArray<FChartsData> Data;
     TArray<FVector2D> Axis;
     TArray<FString> Names;
-    TArray<EChartsSeriesType> SeriesTypes;
     bool bHorizontal = false;
     bool bPoints = false;
     bool bSmooth = false;
@@ -30,9 +49,9 @@ struct FChartsModel
     static FChartsModel From(const FChartsPolarAreaConfig& Config);
     static FChartsModel From(const FChartsRadarConfig& Config);
     int32 NumSeries() const;
-    bool IsBarSeries(int32 Series) const;
+    bool HasBars() const;
     const FChartsValue* GetValue(int32 DataIndex, int32 ValueIndex) const;
-    FChartsElement Element(int32 DataIndex, int32 ValueIndex) const;
+    FChartsElement Element(int32 DataIndex, int32 ValueIndex, EChartsElementPart Part = EChartsElementPart::Data) const;
 };
 
 struct FChartsRange
@@ -51,7 +70,7 @@ namespace ChartsMath
     bool InSector(FVector2f Point, FVector2f Center, float Inner, float Outer, float Start, float Sweep);
     TArray<FVector2f> Curve(const TArray<FVector2f>& Points, int32 Segment, bool bSmooth);
     FString Number(double Value);
-    FChartsStyle SanitizeStyle(const FChartsStyle& Style);
+    FChartsRenderStyle SanitizeStyle(const FChartsRenderStyle& Style);
 }
 
 enum class EChartsPrimitive : uint8 { Mesh, Line, Text };
@@ -68,15 +87,18 @@ struct FChartsPrimitive
     int32 FontSize = 11;
     int32 DataIndex = INDEX_NONE;
     int32 ValueIndex = INDEX_NONE;
+    EChartsElementPart Part = EChartsElementPart::Data;
 };
 
-enum class EChartsHitShape : uint8 { Rect, Circle, Sector, Line, Polygon };
+enum class EChartsHitShape : uint8 { Rect, Circle, Sector, Line, Polygon, Mesh, Series };
 
 struct FChartsHitRegion
 {
     EChartsHitShape Shape = EChartsHitShape::Rect;
     FChartsElement Element;
     TArray<FVector2f> Points;
+    TArray<uint32> Indices;
+    TArray<FChartsHitRegion> Regions;
     FSlateRect Bounds;
     FVector2f Center = FVector2f::ZeroVector;
     float Inner = 0.0f;
@@ -85,6 +107,7 @@ struct FChartsHitRegion
     float Sweep = 0.0f;
     float Tolerance = 0.0f;
     bool Contains(FVector2f Point) const;
+    bool HitTest(FVector2f Point, FChartsElement& OutElement) const;
 };
 
 struct FChartsScene
@@ -94,11 +117,11 @@ struct FChartsScene
     TArray<FChartsPrimitive> Primitives;
     TArray<FChartsHitRegion> Hits;
 
-    void Build(const FChartsModel& Model, const FChartsStyle& InStyle, FVector2f InSize);
+    void Build(const FChartsModel& Model, const FChartsRenderStyle& InStyle, FVector2f InSize);
     bool HitTest(FVector2f Point, FChartsElement& OutElement) const;
 
 private:
-    FChartsStyle Style;
+    FChartsRenderStyle Style;
     void Text(FVector2f Position, FString Label, int32 FontSize = 0);
     void Line(TArray<FVector2f> Points, FSlateColor Color, float Thickness = 1.0f, const FChartsElement* Element = nullptr);
     void Mesh(TArray<FVector2f> Points, TArray<uint32> Indices, FSlateColor Color, float Opacity = 1.0f, const FChartsElement* Element = nullptr);
