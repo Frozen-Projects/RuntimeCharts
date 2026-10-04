@@ -1,13 +1,25 @@
 {
-    "FileVersion": 3,
-    "Version": 4,
-    "VersionName": "2.1.0",
-    "FriendlyName": "Runtime Charts",
-    "Description": "Native Blueprint and UMG charts rendered by Slate. No browser, materials, or third-party dependencies.",
-    "Category": "UI",
-    "CreatedBy": "Runtime Charts",
-    "EngineVersion": "5.8.0",
-    "CanContainContent": false,
-    "Installed": false,
-    "Modules": [{ "Name": "RuntimeCharts", "Type": "Runtime", "LoadingPhase": "Default" }]
+	"FileVersion": 3,
+	"Version": 4,
+	"VersionName": "2.1.0",
+	"FriendlyName": "Runtime Charts",
+	"Description": "Native Blueprint and UMG charts rendered by Slate. No browser, materials, or third-party dependencies.",
+	"Category": "Frozen Forest",
+	"CreatedBy": "Frozen Forest Reality Technologies",
+	"EngineVersion": "5.8.0",
+	"CanContainContent": true,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "RuntimeCharts",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false
 }
