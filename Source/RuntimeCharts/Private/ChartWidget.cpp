@@ -68,5 +68,8 @@ void UChartWidget::HandleClick(const FChartsElement& Element)
 void UChartWidget::HandleHoverEnded() { OnElementHoverEnded.Broadcast(); }
 
 #if WITH_EDITOR
-const FText UChartWidget::GetPaletteCategory() { return NSLOCTEXT("RuntimeCharts", "Palette", "Runtime Charts"); }
+const FText UChartWidget::GetPaletteCategory() 
+{
+    return NSLOCTEXT("RuntimeCharts", "Palette", "Runtime Charts"); 
+}
 #endif
